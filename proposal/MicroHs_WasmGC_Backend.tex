@@ -32,7 +32,7 @@ To build upon this work, we plan to undertake the following steps:
     \item Determine how to best implement more complex language features such as IO in the WasmGC backend and runtime system. We expect our runtime system to differ from the C runtime system in this regard, as instead of relying on capabilities of the runtime system we can now request certain functions to be provided by the Wasm host environment.
     \item Implement missing features to be able to compile and run non-trivial programs that make use of the prelude or a subset thereof.
     % Marco. What benchmarks/programs to use? (tbd)
-    \item Benchmark the produced binaries in terms of size, runtime, and memory usage against other backends of MicroHs.
+    \item Benchmark the produced binaries in terms of size, runtime, and memory usage against other backends of MicroHs (for example by making use of the nofib benchmark programs used by GHC).
 \end{enumerate}
 
 We hope this project will be useful in showing the potential of leveraging WasmGC for reduced binary sizes and its accompanying performance impacts. Further benefits of this work could include the ability to restrict programs in what they can do, as certain capabilities are to be provided by the host environment, as well as the potential for easier interoperability with other programs through its use of Wasm as a compilation target.
