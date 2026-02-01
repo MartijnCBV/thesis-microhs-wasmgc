@@ -1,0 +1,26 @@
+\documentclass[11pt,a4paper,oneside]{book}
+
+\input{misc/imports}
+\input{misc/setup}
+\input{misc/info}
+
+\begin{document}
+
+\frontmatter
+    \input{pages/0_title}
+    \frontmaterial
+    \input{pages/1_abstract}
+    \tableofcontents
+
+\mainmatter
+    \mainmaterial
+    \input{pages/2_introduction}
+    \input{pages/3_background}
+    \input{pages/4_related_work}
+    \input{pages/5_progress}
+    \input{pages/6_plan}
+
+\addcontentsline{toc}{chapter}{Bibliography}
+\printbibliography
+
+\end{document}

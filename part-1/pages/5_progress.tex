@@ -1,0 +1,187 @@
+\chapter{Progress}\label{ch:progress}
+\section{DSL for Generating Wasm 3.0 Code}
+To help in generating Wasm 3.0 code, we have designed and implemented a small DSL embedded in Haskell. The DSL is a small deeply embedded imperative language \cite{dsl} that abstracts away the explicit stack manipulation that is necessary when writing Wasm code directly. The DSL is close to Wasm 3.0 in its structure, in the sense that it has a notion of a module \verb|RtSpec| that has functions \verb|RtFunc|, imports, types \verb|RtTypeDef|, and functions that have explicitly declared local variables. The body of a function consists of a single expression \verb|RtExpr| that can a be a block of expressions, a control flow construct, or a simple expression. A selected set of the constructs provided by the DSL can be seen in Figure~\ref{fig:dsl_constructs}.
+
+\begin{lstlisting}[caption={Selected constructs provided by the DSL.}, label={fig:dsl_constructs}, language=haskell, mathescape=true]
+data RtSpec = RtSpec
+    { specTypes   :: [RtTypeDef]
+                  --  Name     Args     Results
+    , specImports :: [(String, [RtTyp], [RtTyp])]
+    , specFuncs   :: [RtFunc]
+    , specMain    :: RtMainFunc
+    }
+data RtFunc = RtFunc
+    { funcName   :: String
+    , funcArgs   :: [(String, RtTyp)]
+    , funcRetTyp :: [RtTyp]
+    , funcLocals :: [(String, RtTyp)]
+    , funcBody   :: RtExpr
+    }
+data RtTypDef = RtTypDef
+    { typeName :: String
+    , typeDef  :: RtTyp
+    }
+data RtExpr
+    = Block [RtExpr]
+    | If RtExpr RtExpr RtExpr
+    | While RtExpr RtExpr
+    | Case RtExpr [RtExpr]
+    | Call String [RtExpr]
+    | Let String RtExpr
+    | Return RtExpr
+            $\vdots$
+    | IntLit Int
+\end{lstlisting}
+
+
+Using the constructs provided by the DSL, we can implement functions in a way that is close to how they would be implemented in Wasm 3.0, but in and easier-to-read and write manner. An example of this can be seen in Listing~\ref{lst:dsl_example}, which shows the implementation of a function that calculates the length of the left spine of a graph.
+
+\begin{lstlisting}[caption={Example of a function implementation in the DSL}, label={lst:dsl_example}, language=haskell]
+leftSpineLength :: RtFunc
+leftSpineLength = RtFunc
+    { funcName = _leftSpineLength
+    , funcArgs = [ (_node, TNRef _Node) ]
+    , funcRetTyp = [TInt]
+    , funcLocals = [ (_length , TInt       )
+                    , (_current, TNRef _Node)
+                    ]
+    , funcBody = Block
+        [ Let [_length ] (IntLit 0)
+        , Let [_current] (Var _node)
+        , traverseLeft _current $ 
+            Let [_length] (increment (Var _length))
+        , Return (Var _length)
+        ]
+    }
+\end{lstlisting}
+
+On top of the DSL, we have made shorthand functions that generate a block of DSL expressions for patterns used in the original DSL used by Anand~\cite{anandthesis} for implementing reduction rules for the combinators and primitives used in MicroHs. This allows us to implement the runtime system entirely in the new DSL while reusing the existing combinator and primitive implementations. As an example, the implementation of the reduction of the \verb|S| combinator in both the original DSL and the new DSL can be seen in Listing~\ref{lst:s_combinator}.
+
+\begin{lstlisting}[caption={Implementation of the reduction of the \texttt{S} combinator in both the original DSL (left) and the new Wasm 3.0 DSL (right).}, label={lst:s_combinator}, language=haskell]
+-- S x y z -> x z (y z) 
+-- Original DSL
+redRuleS :: [MixedInstr]
+redRuleS = redRule n ln rn
+    where
+        n  = 3
+        ln = GI (MkNode (CVar (MV X))) (VVar (MV Z))
+        rn = GI (MkNode (CVar (MV Y))) (VVar (MV Z))
+-- New DSL
+redRuleS :: RtExpr
+redRuleS = redRule n ln rn
+    where
+        n  = 3
+        ln = mkNode x z
+        rn = mkNode y z
+\end{lstlisting}
+
+\section{Runtime System Implementation}
+After reimplementing the runtime system in the new DSL, we encountered several issues that needed to be resolved before being able to properly reduce a program. One of the main issues in the old runtime system was how the left ancestor stack (LAS) is handled.
+
+The old implementation makes use of two functions to apply reduction rules to a node \verb|reduce| and \verb|step|. The \verb|reduce| function is responsible for reducing a node completely, while the \verb|step| function is responsible for applying a single reduction step to a node. The \verb|step| function makes use of the LAS to keep track of the ancestors of the current node being reduced, which is necessary when performing reductions to efficiently access and update the ancestors of the current node. The \verb|reduce| function constructs the LAS for the node being reduced and then calls \verb|step| repeatedly until the node is fully reduced.
+
+There are two main issues with how this process handles the LAS. The first issue is that the LAS is constructed by traversing the left spine of the node being reduced twice, once to calculate its length and once to populate the LAS array. This is inefficient as it requires traversing the left spine of the node being reduced twice, which can be costly for deep left spines. The second issue is that it does not correctly keep track of the LAS, an example of this is in reducing a graph that represents the expression \verb|I x| where \verb|x| has a deep left spine. When reducing this graph, the LAS is constructed for the root node \verb|I|, which is empty as \verb|I| has no ancestors. When the \verb|I| combinator is reduced, it replaces itself with its argument \verb|x|, but the LAS is not updated to reflect this change. As a result, when the reduction continues on \verb|x|, the LAS is still empty, which leads to incorrect behavior when trying to access or update the ancestors of \verb|x|. 
+
+To resolve these issues, the LAS should be maintained throughout the entire reduction process, rather than being constructed only at the beginning of the reduction. An example of the algorithm can be seen in Algorithm~\ref{alg:sk_reduction}. This algorithm maintains the LAS throughout the entire reduction process, updating it as necessary when nodes are reduced. This ensures that the LAS is always accurate and up-to-date, allowing for correct access and updates to the ancestors of the current node being reduced.
+
+\begin{algorithm}
+\caption{SK Reduction with maintained LAS}
+\label{alg:sk_reduction}
+\SetKwInOut{Input}{Input}
+\SetKwInOut{Output}{Output}
+\SetKwComment{Comment}{/* }{ */}
+\Input{Node \texttt{n} to reduce}
+\Output{Reduced node}
+$las \gets \emptyset$\;
+$las_{pointer} \gets -1$\;
+$cur \gets n$\;
+\While{$cur$ is not fully reduced}{
+    \eIf{$cur$ is a combinator}{
+        $(cur, las_{pointer}) \gets \text{step}(cur, las, las_{pointer})$\;
+    }{
+        $cur \gets \text{leftChild}(cur)$\;
+    }
+    $las[las_{pointer}] \gets cur$\;
+    $las_{pointer} \gets las_{pointer} + 1$\;
+}
+\end{algorithm}
+
+This however comes with a new problem, when we have the graph of a program, we cannot statically know the maximum depth of the LAS that will be needed during the reduction of the graph, as the graph allows for recursion that can lead to arbitrarily deep left spines. To resolve this there are three possible approaches:
+\begin{enumerate}
+    \item Allocate a stack with a chosen maximum depth for the LAS. If the maximum depth is exceeded during reduction, an error is raised. This approach is used by MicroHs's C runtime system and simple to implement, but can result in errors for programs that require a deeper LAS than the chosen maximum depth, and can waste memory if the maximum depth is set too high.
+    \item Dynamically resize the LAS stack when the maximum depth is exceeded. This approach allows for arbitrary depth of the LAS, but a growing strategy needs to be chosen carefully to avoid excessive memory allocations and copying.
+    \item Reuse the Wasm stack for the LAS. This approach leverages the existing Wasm stack to store the LAS, avoiding the need for a separate stack allocation. However, this requires careful management of the Wasm stack to ensure that it is used correctly and does not interfere with other parts of the program.
+\end{enumerate}
+
+Another change in the runtime system is the type used for representing nodes. In the old runtime system, nodes were represented using a struct with two fields \verb|left| and \verb|right|, both of type \verb|anyref|. Where the \verb|anyref| could either be a pointer to another node or a pointer to an integer value. This representation is not ideal as it requires frequent runtime type checks and casts when accessing the fields of a node. In the new runtime system we have opted to represent nodes using a struct with three fields \verb|left|, \verb|right|, and \verb|val|. The \verb|left| and \verb|right| fields are references to other nodes, while the \verb|val| field is an \verb|anyref|, an \verb|anyref| is needed in order to represent non-integer primitive values such as a floating-point number. Furthermore, we enforce the following constraints on the nodes: Let $n$ be a node, then $n.left = \text{null} \Leftrightarrow n.right =\text{null}$, $n.left = \text{null} \Rightarrow n.val \neq \text{null}$, and $n.left \neq \text{null} \Rightarrow n.val = \text{null}$. This means that a node is either an internal node with both left and right children and no value, or a leaf node with no children and a value. This representation allows us to avoid runtime type checks and casts when accessing the fields of a node, as we can determine the type of a node through \verb|null| checks on its fields.
+
+\section{Sanity Check}
+To check the feasibility of the Wasm 3.0 backend, we have ran a small Haskell program on both the Wasm 3.0 backend as well as the existing Wasm backend (through emscripten) and compared the results. To force the execution of the program, we have temporarily implemented a simple primitive \verb|pint32| that takes a 32-bit integer value and prints it to the console after which it returns the value \verb|0|. The Haskell program used for the sanity check can be seen in Listing~\ref{lst:sanity_check_hs}. Notably the program does not make use of the Prelude, instead opting to define its own data types and functions, and making use of the primitive \verb|Int| type defined in MicroHs's \verb|Primitives| module. The results of the sanity check can be seen in Table~\ref{tab:sanity_check_results}.
+
+\begin{lstlisting}[caption={Haskell program used for the sanity check of the Wasm 3.0 backend.}, label={lst:sanity_check_hs}, language=haskell]
+module Simple where
+import qualified Prelude ()
+import Primitives
+
+data Peano = Zero | Succ Peano
+    deriving ()
+data Bool = False | True
+    deriving ()
+
+one :: Peano
+one = Succ Zero
+two :: Peano
+two = Succ one
+three :: Peano
+three = Succ two
+add :: Peano -> Peano -> Peano
+add Zero     y = y
+add (Succ x) y = Succ (add x y)
+mul :: Peano -> Peano -> Peano
+mul Zero     _ = Zero
+mul (Succ x) y = add y (mul x y)
+fac :: Peano -> Peano
+fac Zero     = Succ Zero
+fac (Succ x) = mul (Succ x) (fac x)
+eqnat :: Peano -> Peano -> Bool
+eqnat Zero     Zero     = True
+eqnat Zero     (Succ _) = False
+eqnat (Succ _) Zero     = False
+eqnat (Succ x) (Succ y) = eqnat x y
+sumto :: Peano -> Peano
+sumto Zero     = Zero
+sumto (Succ x) = add (Succ x) (sumto x)
+n5 :: Peano
+n5 = add two three
+n6 :: Peano
+n6 = add three three
+n17 :: Peano
+n17 = add n6 (add n6 n5)
+n37 :: Peano
+n37 = Succ (mul n6 n6)
+n703 :: Peano
+n703 = sumto n37
+n720 :: Peano
+n720 = fac n6
+boolToInt :: Bool -> Int
+boolToInt False = 0
+boolToInt True  = 1
+
+main :: IO ()
+main = (_primitive "pint32") (boolToInt (eqnat n720 (add n703 n17)))
+\end{lstlisting}    
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|l|c|c|c|}
+        \hline
+        \textbf{Backend} & \textbf{Time (ms)} & \textbf{With Binaryen (ms)} & \textbf{Size (B)} \\
+        \hline
+        Wasm 3.0 Backend & 0 & 0 & 0 \\
+        Wasm Backend (Emscripten) & 0 & 0 & 0 \\
+        Native Backend & 0 & N/A & 0 \\
+        \hline
+    \end{tabular}
+    \caption{Results of the sanity check comparing the Wasm 3.0 backend against the existing Wasm backend (through emscripten) and the native backend.}
+    \label{tab:sanity_check_results}
+\end{table}
