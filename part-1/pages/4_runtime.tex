@@ -1,0 +1,201 @@
+\chapter{Compiler and Runtime System Design}\label{ch:runtime}
+\section{Compiler and Runtime System Overview}
+If you recall the architecture of the MicroHs compiler from Chapter~\ref{ch:background}, the compiler transforms the generated combinators to a useable format for the C runtime, after which it combines the generated code with the runtime system and compiles it to a binary. 
+
+To target WasmGC, we will need to change these two steps. Instead of generating the combinator format that the C runtime can use, we will instead generate WasmGC code directly from the combinators. As for the runtime system, we will need to reimplement it in WasmGC. This means that we will implement the graph reduction algorithm in WasmGC, to do this we will make use of the algorithm shown in Algorithm~\ref{alg:graph_reduction}. This algorithm takes a node as input and reduces it to WHNF by repeatedly walking the left spine of the graph until a leaf storing a combinator or primitive is reached, at which point we call a function \verb|step| that applies the reduction rule for that combinator or primitive and returns a pointer to the reduced node and an updated LAS pointer. The runtime system also maintains a left ancestor stack (LAS) to keep track of the ancestors of the current node and a LAS pointer to point to the top of the LAS.
+
+\begin{algorithm}
+    \caption{Graph reduction algorithm}
+    \label{alg:graph_reduction}
+    \SetKwInOut{Input}{Input}
+    \SetKwInOut{Output}{Output}
+    \SetKwComment{Comment}{/* }{ */}
+    \Input{Node \texttt{n} to reduce}
+    \Output{Reduced node}
+    $las \gets \emptyset$\;
+    $las_{pointer} \gets -1$\;
+    $cur \gets n$\;
+    \While{$cur$ is not fully reduced}{
+        \eIf{$cur$ is a combinator}{
+            $(cur, las_{pointer}) \gets \text{step}(cur, las, las_{pointer})$\;
+        }{
+            $cur \gets \text{leftChild}(cur)$\;
+        }
+        $las[las_{pointer}] \gets cur$\;
+        $las_{pointer} \gets las_{pointer} + 1$\;
+    }
+    \end{algorithm}
+
+\section{Domain Specific Language}
+To help in generating WasmGC code for both the runtime system and WasmGC backend, we have designed and implemented a small DSL embedded in Haskell. The DSL is a deeply embedded imperative language~\cite{dsl} that abstracts away the explicit stack manipulation that is necessary when writing Wasm code directly. A module in Wasm corresponds to a \verb|RtModule| in the DSL, and contains the type definitions, imports, and functions of the module:
+\begin{minted}{haskell}
+data RtModule = RtModule
+    { moduleTypes   :: [RtTypeDef]
+                    --  Name     Args     Results
+    , moduleImports :: [(String, [RtTyp], [RtTyp])]
+    , moduleFuncs   :: [RtFunc]
+    , moduleMain    :: RtMainFunc
+    }
+\end{minted}
+The type definitions consist of a name and what type to bind it to:
+\begin{minted}{haskell}
+data RtTypeDef =  RtTypDef
+    { typeName :: String
+    , typeDef  :: RtTyp
+    }
+\end{minted}
+Types are either a simple primitive type, a reference to another type, an array, or a record:
+\begin{minted}{haskell}
+data  RtTyp
+    = TI32
+    | TBool
+    | TAny
+    -- any other wasm primitive type identified by its name, e.g. i64, f32, etc.
+    | TOther  String
+    -- a reference to another type, identified by its name.
+    | TNRef   String
+    | TRef    RtTyp
+    | TArray  RtTyp
+    | TRecord [(String, RtTyp)]
+\end{minted}
+
+Like Wasm, functions have explicitly declared local variables at the function definition level, they have a name, an explicit type, and a body consisting of a single expression:
+\begin{minted}{haskell}
+data RtFunc = RtFunc
+    { funcName   :: String
+    , funcArgs   :: [(String, RtTyp)]
+    , funcRetTyp :: [RtTyp]
+    , funcLocals :: [(String, RtTyp)]
+    , funcBody   :: RtExpr
+    }
+\end{minted}
+The body of a function consists of a single expression \verb|RtExpr| that can be a block of expressions, a control flow construct, or a simple expression:
+\begin{minted}{haskell}
+data RtExpr
+    = Block [RtExpr]
+    | If     RtExpr  RtExpr RtExpr
+    | While  RtExpr  RtExpr
+    | Case   RtExpr [RtExpr]
+    | Call   String [RtExpr]
+    | Let    String  RtExpr
+    | Return RtExpr
+    ...
+    | IntLit Int
+\end{minted}
+Overall the DSL closely resembles WasmGC. Examples of the DSL in use can be found in the next section where we describe the runtime system implementation. For the examples we will make use of some helper functions that generate common patterns in the code, such as \verb|mkNode| which generates the code to construct a new node with two children, \verb|mkValue| which generates the code to box a literal in a \verb|value| type, and \verb|intRefLit| which takes an integer literal and converts it to a \verb|i31| reference.
+
+\section{WasmGC Backend Implementation}
+The abstract representation of expressions in the MicroHs compiler is defined as follows:
+\begin{minted}{haskell}
+data Exp
+    = Var String
+    | Lit Lit
+    | App Exp Exp
+    | Lam Ident Exp
+\end{minted}
+To generate WasmGC code from this representation, we will need to map the abstract representation to the correct code to construct a graph in our DSL. If we encounter a variable, we generate the instructions to lookup the variable in the functions array and return a pointer to the variable in question. In case of a literal, we either generate instructions to box the literal in a \verb|value| type (more on this in the next section) or if the literal is a combinator, we look it up in the combinator table and retrieve the index of the combinator, which is returned (as it is used an identifier). Applications are done by constructing a new node with the two arguments as its children. Lambdas should be eliminated by the time we reach the WasmGC backend, so we can ignore them. The code for this mapping is as follows:
+\begin{minted}{haskell}
+compileExp :: Exp -> RtExpr
+compileExp (Var x)         = AGet (DSL.Var _functions) (IntLit tIdx) _stack
+    where tIdx = read (tail (showIdent v)) :: Int
+compileExp (Lit (LPrim p)) = intRefLit $ case primIndex p of
+    Just idx -> idx
+    Nothing  -> error "Unknown primitive"
+compileExp (Lit (Lint i))  = mkValue $ intRefLit i
+compileExp (App e1 e2)     = mkNode (compileExp e1) (compileExp e2)
+compileExp (Lam _ _)       = error "Lambdas should not exist"
+\end{minted}
+
+\section{Runtime System Implementation}
+The runtime system implements the algorithm shown in Algorithm~\ref{alg:graph_reduction} in WasmGC using our DSL. To do this, we first need to define the data structures we will use for the graph representation and the LAS. For the graph representation, we will use a struct type named \verb|Node| with two fields \verb|left| and \verb|right| which are references to either other nodes, combinators/primitives, or values (we make use of \verb|anyref| for this as it can store references to any type). For the LAS, we will use an array of references to nodes, and lastly for values we will use a struct type named \verb|Value| with a field \verb|val| of type \verb|anyref| to store primitive or fully reduced values. The type definitions for these types are as follows:
+\begin{minted}{haskell}
+node = RtTypDef "Node" $ TRecord
+    [ ("left",  TRef (TRef TAny))
+    , ("right", TRef (TRef TAny))
+    ]
+
+las = RtTypDef "Stack" $ TArray (TNRef "Node")
+
+value = RtTypDef "Value" $ TRecord
+    [ ("val", TRef TAny) ]
+\end{minted}
+
+We then require three functions, namely \verb|main| which serves as the entry point for a program and constructs the initial graph and starts the reduction process, \verb|reduce| which implements the graph reduction algorithm, and \verb|step| which applies the reduction rule for a given combinator or primitive. The body of the \verb|main| function is as follows:
+\begin{minted}{haskell}
+mainBody fs = Block
+    [ -- initialize temporary functions array
+      Let ["functions"] (ANew (IntLit fs) "Stack")
+    , -- fill the functions array with empty nodes
+      While (ILt (Var "i") (IntLit fs))
+        (Block
+            [ ASet (Var "functions") (Var "i") (...) "Stack"
+            , Let ["i"] (IAdd (Var "i") (IntLit 1))
+            ]
+        )
+    , -- code for constructing the initial graph is inserted here by the backend
+      -- root node is stored in a local variable named "node"
+       ...
+    , -- free the memory used by the functions array
+      Let ["functions"] (NullLit (TNRef "Stack"))
+    , -- start the reduction process
+      Return (Call "reduce" [Var "node"])
+    ]
+\end{minted}
+
+The \verb|reduce| function starts by initializing an array to be used as the LAS and a pointer to keep track of the top of the LAS. It then enters a loop where there are four cases to consider. Case 1: if the current node is \verb|null|, then we have finished reduction and there was no result. Case 2: if the current node has a left child that is the \verb|I| combinator and a right child of the type value, then we have finished reduction and the result is the value stored in the right child. Case 3: if the current node has a left child that is a combinator or primitive, then we call the \verb|step| function to apply the reduction rule for that combinator or primitive. Case 4: if the current node has a left child that is not a combinator or primitive, then we walk down the left spine of the graph by setting the current node to its left child and pushing it onto the LAS. The code for this is as follows:
+\begin{minted}{haskell}
+reduceBody = Block
+      -- setup
+    [ Let ["stack"]   (ANew (IntLit 100000) "Stack")]
+    , Let ["sptr"]    (IntLit (-1))
+      -- root is the argument to the function
+    , Let ["current"] (Var "root")
+      -- reduction loop
+    , While Nop -- we handle exiting the loop using return
+        (Block
+            [ -- case 1:
+              If (IsNull (Var "current"))
+                 (Return (NullLit (TNRef "Value")))
+                 Nop
+              -- case 2:
+              , If (TTest (getLeft  (Var "current")) (TRef TI32))
+                   (If (IAnd ...)
+                       (Return (...))
+                       Nop
+                   )
+              Nop
+              -- non terminating case, 
+              -- so we push the current node onto the LAS
+            , Let ["sptr"] (increment $ Var "sptr")
+            , ASet (Var "stack") (Var "sptr") (Var "current") "Stack"
+            , If (TTest (getLeft (Var "current")) (TRef TInt))
+                 -- case 3:
+                 (Let ["current", "sptr"] 
+                    (Call _step [...]))
+                 -- case 4:
+                 (Let ["current"] 
+                    (TCast (getLeft (Var "current")) (TNRef "Node")))
+            ]
+        )
+    , Return (NullLit (TNRef "Value")) -- should never reach here
+    ]
+\end{minted}
+
+The \verb|step| function has a case for each combinator and primitive, which apply the reduction rule for the combinator/primitive in question. For this is makes use of metavariables to represent arguments extracted from the LAS, this makes the reduction rules look closer to the mathematical definitions of the combinators and primitives. The code for the \verb|step| function is as follows:
+\begin{minted}{haskell}
+stepBody = Block
+    [ -- extract the combinator/primitive from the current node
+      Let [_comb]
+        (TRefInt $ RGet (Var _node) _left _Node)
+    , Case (Var _comb) prims
+    , Return $ Block [ Var _current, Var _i ]
+    ]
+\end{minted}
+It makes use of a helper function \verb|prims| that generates the cases for each combinator/primitive based on a primitive table that contains the reduction rules for each combinator/primitive. These reduction rules are defined using a helper function \verb|redRule| which takes a left node definition, a right node definition, and the amount of arguments to pop from the LAS. Using this helper function, we can easily define reduction rules such as the following rule for the \verb|B| combinator $B \; x \; y \; z = x \; (y \; z)$:
+\begin{minted}{haskell}
+redRuleB = redRule ln rn n
+    where
+        ln = x
+        rn = mkNode y z
+        n  = 3
+\end{minted}

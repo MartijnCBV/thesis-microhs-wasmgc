@@ -1,0 +1,18 @@
+\addcontentsline{toc}{chapter}{Appendices}
+
+\makeatletter
+\let\oldchapter\chapter
+\renewcommand{\chapter}[1]
+    {%
+        \addtocontents{toc}{\protect\setcounter{tocdepth}{-1}}%
+        \oldchapter{Appendix \thechapter: #1}%
+        \addtocontents{toc}{\protect\setcounter{tocdepth}{1}}%
+        \addcontentsline{toc}{section}{\thechapter: #1}%
+    }
+\makeatother
+\titleformat{\chapter}[block]
+    {\raggedright\headingfont\huge\bfseries}
+    {}
+    {5pt}
+    {#1}
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}

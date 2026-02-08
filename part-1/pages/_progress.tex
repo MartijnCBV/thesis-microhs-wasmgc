@@ -1,15 +1,24 @@
 \chapter{Progress}\label{ch:progress}
 \section{DSL for Generating Wasm 3.0 Code}
-To help in generating Wasm 3.0 code, we have designed and implemented a small DSL embedded in Haskell. The DSL is a small deeply embedded imperative language \cite{dsl} that abstracts away the explicit stack manipulation that is necessary when writing Wasm code directly. The DSL is close to Wasm 3.0 in its structure, in the sense that it has a notion of a module \verb|RtSpec| that has functions \verb|RtFunc|, imports, types \verb|RtTypeDef|, and functions that have explicitly declared local variables. The body of a function consists of a single expression \verb|RtExpr| that can a be a block of expressions, a control flow construct, or a simple expression. A selected set of the constructs provided by the DSL can be seen in Figure~\ref{fig:dsl_constructs}.
-
-\begin{lstlisting}[caption={Selected constructs provided by the DSL.}, label={fig:dsl_constructs}, language=haskell, mathescape=true]
+To help in generating Wasm 3.0 code, we have designed and implemented a small DSL embedded in Haskell. The DSL is a small deeply embedded imperative language \cite{dsl} that abstracts away the explicit stack manipulation that is necessary when writing Wasm code directly. The DSL is close to Wasm 3.0 in its structure. A module in Wasm corresponds to a \verb|RtSpec| in the DSL, and contains the type definitions, imports, and functions of the module:
+\begin{minted}{haskell}
 data RtSpec = RtSpec
     { specTypes   :: [RtTypeDef]
-                  --  Name     Args     Results
+                    --  Name     Args     Results
     , specImports :: [(String, [RtTyp], [RtTyp])]
     , specFuncs   :: [RtFunc]
     , specMain    :: RtMainFunc
     }
+\end{minted}
+The type definitions consist of a name and what type (can be a struct or an array) to bind it to:
+\begin{minted}{haskell}
+data RtTypeDef = RtTypDef
+    { typeName :: String
+    , typeDef  :: RtTyp
+    }
+\end{minted}
+Like Wasm, functions have explicitly declared local variables at the function definition level, they have a name, an explicit type, and a body consisting of a single expression:
+\begin{minted}{haskell}
 data RtFunc = RtFunc
     { funcName   :: String
     , funcArgs   :: [(String, RtTyp)]
@@ -17,10 +26,9 @@ data RtFunc = RtFunc
     , funcLocals :: [(String, RtTyp)]
     , funcBody   :: RtExpr
     }
-data RtTypDef = RtTypDef
-    { typeName :: String
-    , typeDef  :: RtTyp
-    }
+\end{minted}
+The body of a function consists of a single expression \verb|RtExpr| that can be a block of expressions, a control flow construct, or a simple expression:
+\begin{minted}{haskell}
 data RtExpr
     = Block [RtExpr]
     | If RtExpr RtExpr RtExpr
@@ -29,14 +37,13 @@ data RtExpr
     | Call String [RtExpr]
     | Let String RtExpr
     | Return RtExpr
-            $\vdots$
+    ...
     | IntLit Int
-\end{lstlisting}
+\end{minted}
+Overall the DSL closely resembles Wasm 3.0
 
-
-Using the constructs provided by the DSL, we can implement functions in a way that is close to how they would be implemented in Wasm 3.0, but in and easier-to-read and write manner. An example of this can be seen in Listing~\ref{lst:dsl_example}, which shows the implementation of a function that calculates the length of the left spine of a graph.
-
-\begin{lstlisting}[caption={Example of a function implementation in the DSL}, label={lst:dsl_example}, language=haskell]
+Using the constructs provided by the DSL, we can implement functions in a way that is close to how they would be implemented in Wasm 3.0, but in and easier-to-read and write manner. For example we can implement a function that calculates the length of the left spine of a node in a graph as follows:
+\begin{minted}{haskell}
 leftSpineLength :: RtFunc
 leftSpineLength = RtFunc
     { funcName = _leftSpineLength
@@ -48,32 +55,36 @@ leftSpineLength = RtFunc
     , funcBody = Block
         [ Let [_length ] (IntLit 0)
         , Let [_current] (Var _node)
+        -- traverseLeft is a shorthand for a while loop that traverses
+        -- the left spine of a node until it reaches a leaf and executes
+        -- the given body on each node visited
         , traverseLeft _current $ 
             Let [_length] (increment (Var _length))
         , Return (Var _length)
         ]
     }
-\end{lstlisting}
+\end{minted}
+In this example we make use of several constructs provided by the dsl 
 
-On top of the DSL, we have made shorthand functions that generate a block of DSL expressions for patterns used in the original DSL used by Anand~\cite{anandthesis} for implementing reduction rules for the combinators and primitives used in MicroHs. This allows us to implement the runtime system entirely in the new DSL while reusing the existing combinator and primitive implementations. As an example, the implementation of the reduction of the \verb|S| combinator in both the original DSL and the new DSL can be seen in Listing~\ref{lst:s_combinator}.
-
-\begin{lstlisting}[caption={Implementation of the reduction of the \texttt{S} combinator in both the original DSL (left) and the new Wasm 3.0 DSL (right).}, label={lst:s_combinator}, language=haskell]
--- S x y z -> x z (y z) 
--- Original DSL
+On top of the DSL, we have made shorthand functions that generate a block of DSL expressions for patterns used in the original DSL used by Anand~\cite{anandthesis} for implementing reduction rules for the combinators and primitives used in MicroHs. This allows us to implement the runtime system entirely in the new DSL while mostly reusing the look and feel of the existing combinator and primitive implementations. As an example we first show the implementation of the reduction of the \verb|S| ($\text{S} x y z \rightarrow x z (yz)$) combinator in the original DSL:
+\begin{minted}{haskell}
 redRuleS :: [MixedInstr]
 redRuleS = redRule n ln rn
     where
         n  = 3
         ln = GI (MkNode (CVar (MV X))) (VVar (MV Z))
         rn = GI (MkNode (CVar (MV Y))) (VVar (MV Z))
--- New DSL
+\end{minted}
+As can be seen the implementation is quite verbose due to the explicit constructors used to build the graph patterns. Using the new DSL and the shorthand functions we can implement the same reduction rule as follows:
+\begin{minted}{haskell}
 redRuleS :: RtExpr
 redRuleS = redRule n ln rn
     where
         n  = 3
         ln = mkNode x z
         rn = mkNode y z
-\end{lstlisting}
+\end{minted}
+As can be seen the implementation makes use of the \verb|mkNode| function, this function generates a block of DSL expressions that constructs a node with the given left and right children. The new implementation is much more concise and easier to read, while still being close to the original implementation.
 
 \section{Runtime System Implementation}
 After reimplementing the runtime system in the new DSL, we encountered several issues that needed to be resolved before being able to properly reduce a program. One of the main issues in the old runtime system was how the left ancestor stack (LAS) is handled.
@@ -113,12 +124,12 @@ This however comes with a new problem, when we have the graph of a program, we c
     \item Reuse the Wasm stack for the LAS. This approach leverages the existing Wasm stack to store the LAS, avoiding the need for a separate stack allocation. However, this requires careful management of the Wasm stack to ensure that it is used correctly and does not interfere with other parts of the program.
 \end{enumerate}
 
-Another change in the runtime system is the type used for representing nodes. In the old runtime system, nodes were represented using a struct with two fields \verb|left| and \verb|right|, both of type \verb|anyref|. Where the \verb|anyref| could either be a pointer to another node or a pointer to an integer value. This representation is not ideal as it requires frequent runtime type checks and casts when accessing the fields of a node. In the new runtime system we have opted to represent nodes using a struct with three fields \verb|left|, \verb|right|, and \verb|val|. The \verb|left| and \verb|right| fields are references to other nodes, while the \verb|val| field is an \verb|anyref|, an \verb|anyref| is needed in order to represent non-integer primitive values such as a floating-point number. Furthermore, we enforce the following constraints on the nodes: Let $n$ be a node, then $n.left = \text{null} \Leftrightarrow n.right =\text{null}$, $n.left = \text{null} \Rightarrow n.val \neq \text{null}$, and $n.left \neq \text{null} \Rightarrow n.val = \text{null}$. This means that a node is either an internal node with both left and right children and no value, or a leaf node with no children and a value. This representation allows us to avoid runtime type checks and casts when accessing the fields of a node, as we can determine the type of a node through \verb|null| checks on its fields.
+% Another change in the runtime system is the type used for representing nodes. In the old runtime system, nodes were represented using a struct with two fields \verb|left| and \verb|right|, both of type \verb|anyref|. Where the \verb|anyref| could either be a pointer to another node or a pointer to an integer value. This representation is not ideal as it requires frequent runtime type checks and casts when accessing the fields of a node. In the new runtime system we have opted to represent nodes using a struct with three fields \verb|left|, \verb|right|, and \verb|val|. The \verb|left| and \verb|right| fields are references to other nodes, while the \verb|val| field is an \verb|anyref|, an \verb|anyref| is needed in order to represent non-integer primitive values such as a floating-point number. Furthermore, we enforce the following constraints on the nodes: Let $n$ be a node, then $n.left = \text{null} \Leftrightarrow n.right =\text{null}$, $n.left = \text{null} \Rightarrow n.val \neq \text{null}$, and $n.left \neq \text{null} \Rightarrow n.val = \text{null}$. This means that a node is either an internal node with both left and right children and no value, or a leaf node with no children and a value. This representation allows us to avoid runtime type checks and casts when accessing the fields of a node, as we can determine the type of a node through \verb|null| checks on its fields.
 
 \section{Sanity Check}
-To check the feasibility of the Wasm 3.0 backend, we have ran a small Haskell program on both the Wasm 3.0 backend as well as the existing Wasm backend (through emscripten) and compared the results. To force the execution of the program, we have temporarily implemented a simple primitive \verb|pint32| that takes a 32-bit integer value and prints it to the console after which it returns the value \verb|0|. The Haskell program used for the sanity check can be seen in Listing~\ref{lst:sanity_check_hs}. Notably the program does not make use of the Prelude, instead opting to define its own data types and functions, and making use of the primitive \verb|Int| type defined in MicroHs's \verb|Primitives| module. The results of the sanity check can be seen in Table~\ref{tab:sanity_check_results}.
+To check the feasibility of the Wasm 3.0 backend, we have ran a small Haskell program on both the Wasm 3.0 backend as well as the existing Wasm backend (through emscripten) and compared the results. To force the execution of the program, we have temporarily implemented a simple primitive \verb|pint32| that takes a 32-bit integer value and prints it to the console after which it returns the value \verb|0|. The following Haskell program is used for the sanity check: 
 
-\begin{lstlisting}[caption={Haskell program used for the sanity check of the Wasm 3.0 backend.}, label={lst:sanity_check_hs}, language=haskell]
+\begin{minted}{haskell}
 module Simple where
 import qualified Prelude ()
 import Primitives
@@ -169,8 +180,9 @@ boolToInt True  = 1
 
 main :: IO ()
 main = (_primitive "pint32") (boolToInt (eqnat n720 (add n703 n17)))
-\end{lstlisting}    
+\end{minted}
 
+Notably the program does not make use of the Prelude, instead opting to define its own data types and functions, and making use of the primitive \verb|Int| type defined in MicroHs's \verb|Primitives| module. The results of the sanity check can be seen in Table~\ref{tab:sanity_check_results}.
 \begin{table}[h]
     \centering
     \begin{tabular}{|l|c|c|c|}

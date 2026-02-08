@@ -1,0 +1,70 @@
+\chapter{Preliminary Results}\label{ch:prelim}
+In order to determine if the direction we have taken with the WasmGC backend and runtime system is promising (i.e. if the generated Wasm binaries have reasonable runtime performance). we ran a small benchmark program on both the WasmGC backend as well as the existing Wasm backend (through emscripten) and compared the results. To force the execution of the program, we implemented a simple primitive \verb|pint32| that takes a 32-bit integer value and prints it to the console after which it returns the value \verb|0|. The program we use comes from the \verb|Lambda-Calculus cooked n-ways| benchmark~\cite{lamb-n} and has been used to benchmark the MicroHs compiler in the past. The only alterations we made to the program is adding the \verb|boolToInt| function and using it and the \verb|pint32| primitive to print the result. The results of the benchmark can be seen in Table~\ref{tab:benchmark_results}. The program is shown below:
+
+\begin{minted}{haskell}
+module Simple where
+import qualified Prelude ()
+import Primitives
+
+data Peano = Zero | Succ Peano
+    deriving ()
+data Bool = False | True
+    deriving ()
+
+one :: Peano
+one = Succ Zero
+two :: Peano
+two = Succ one
+three :: Peano
+three = Succ two
+add :: Peano -> Peano -> Peano
+add Zero     y = y
+add (Succ x) y = Succ (add x y)
+mul :: Peano -> Peano -> Peano
+mul Zero     _ = Zero
+mul (Succ x) y = add y (mul x y)
+fac :: Peano -> Peano
+fac Zero     = Succ Zero
+fac (Succ x) = mul (Succ x) (fac x)
+eqnat :: Peano -> Peano -> Bool
+eqnat Zero     Zero     = True
+eqnat Zero     (Succ _) = False
+eqnat (Succ _) Zero     = False
+eqnat (Succ x) (Succ y) = eqnat x y
+sumto :: Peano -> Peano
+sumto Zero     = Zero
+sumto (Succ x) = add (Succ x) (sumto x)
+n5 :: Peano
+n5 = add two three
+n6 :: Peano
+n6 = add three three
+n17 :: Peano
+n17 = add n6 (add n6 n5)
+n37 :: Peano
+n37 = Succ (mul n6 n6)
+n703 :: Peano
+n703 = sumto n37
+n720 :: Peano
+n720 = fac n6
+boolToInt :: Bool -> Int
+boolToInt False = 0
+boolToInt True  = 1
+
+main :: IO ()
+main = (_primitive "pint32") (boolToInt (eqnat n720 (add n703 n17)))
+\end{minted}
+% \newpage % TODO: fix newpage, add results, and add discussion of results
+
+\begin{table}[t]
+    \centering
+    \begin{tabular}{|l|c|c|c|}
+        \hline
+        \textbf{Backend} & \textbf{Time (ms)} & \textbf{With Binaryen (ms)} & \textbf{Size (B)} \\
+        \hline
+        WasmGC Backend & 0 & 0 & 49202 \\
+        Wasm Backend (Emscripten) & 0 & N/A & 0 \\
+        \hline
+    \end{tabular}
+    \caption{Results of the benchmark comparing the WasmGC backend against the existing Wasm backend (through emscripten).}
+    \label{tab:benchmark_results}
+\end{table}

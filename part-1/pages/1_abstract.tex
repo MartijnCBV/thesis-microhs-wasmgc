@@ -1,1 +1,6 @@
-\chapter*{Abstract}\label{ch:abstract}
+\begin{center}
+    \headingfont\huge\bfseries{Abstract}
+\end{center}
+\begin{changemargin}{1cm}{1cm}
+\textit{Today, porting Haskell code to web browsers and cloud platforms is complicated. Current approaches such as transpilation to JavaScript or WasmMVP suffer from issues such as large binary sizes or performance issues. To solve this issue, we explore the use of WasmGC as a target for Haskell-to-Wasm compilers. We do this by extending the MicroHs compiler with a new backend that targets WasmGC and a runtime system that goes with it. The runtime system consists of a graph reduction machine capable of reducing SKI combinators, Turner's combinators, and a set of strict primitives. To help in the implementation of the runtime system, we design and implement a Haskell-based DSL for generating WasmGC code. We evalutate the generated Wasm binaries in terms of size and runtime performance against the existing MicroHs Wasm backend (through emscripten). Furthermore, we discuss the plan going forward for Part 2 of the thesis.}
+\end{changemargin}

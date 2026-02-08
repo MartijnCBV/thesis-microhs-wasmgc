@@ -1,26 +1,31 @@
 \chapter{Introduction}\label{ch:introduction}
-Running Haskell code in the context of web browsers, cloud platforms, or similar portable environments is complicated. Approaches such as transpilation to JavaScript~\cite{ghcjs} suffer from performance issues and lack of semantic similarity (e.g. functional vs imperative, lazy vs eager eveluation, etc.), while solutions such as containerization can be too heavyweight for resource-constrained environments and cannot be used in web browsers.
+Today, porting Haskell code to web browsers and cloud platforms is complicated. Current approaches such as transpilation to JavaScript~\cite{ghcjs} suffer from performance issues and lack of semantic similarity (e.g. functional vs imperative, lazy vs eager eveluation, etc.), while solutions such as containerization can not be used in browser environments.
 
-A promising alternative is compiling Haskell to WebAssembly (Wasm)~\cite{wasm,ghcwasm,asterius}, a low-level bytecode format designed for efficient execution in portable environments such as web browsers.
+A promising alternative is compiling Haskell to WebAssembly (Wasm)~\cite{wasm,ghcwasm,asterius}, a low-level bytecode format designed for efficient execution in portable environments such as web browsers, but also for non-browser engines which can be used for server-side applications. Wasm however has its own challenges, the original version of Wasm (WasmMVP) does not natively support garbage collection (GC), which forces compilers targeting WasmMVP to ship their own memory management systems. This in turn results in large binary sizes, which causes issues on the web where bundle size is the main contributor to loading time.
 
-Traditionally Wasm did not natively support garbage collection (GC), which forced compilers targeting Wasm to ship their own memory management systems. This results in large binary sizes as well as increased complexity for the compiler/runtime developers. However, with the recent release of Wasm 3.0~\cite{wasm3}, Wasm now natively supports GC. It does this by leveraging the host environment's GC capabilities. As current Haskell compilers targeting Wasm do not make use of Wasm's GC support, we will explore the effects of making use of it by extending an existing Haskell-to-Wasm compiler MicroHs~\cite{microhs} to target Wasm 3.0.
+This changed with the recent release of Wasm 3.0~\cite{wasm3} due to the integration of the WasmGC proposal, which natively supports GC by leveraging the host environment's GC capabilities. This allows compilers targeting Wasm to make use of the host environment's GC instead of shipping their own, which can lead to smaller binary sizes and improved performance.
 
-MicroHs is a small Haskell compiler (relative to mainstream compilers such as GHC) and runtime system that supports most of Haskell2010 and a subset of GHC extensions. It compiles Haskell code to SKI combinator calculus, which is then combined with a runtime system written in C and compiled to the target platform. Furthermore, MicroHs can target Wasm through its C backend by compiling the resulting C code with Emscripten~\cite{emscripten}. Its small codebase and modular architecture make it a suitable candidate to experiment on without spending too much time on implementation details.
+% TODO: why don't they?
+Despite the potential benefits of using WasmGC, current Haskell-to-Wasm compilers such as GHC's Wasm backend~\cite{ghcwasm} and Asterius~\cite{asterius} do not make use of it, and instead target WasmMVP. 
 
-Previously, Anand~\cite{anandthesis} made a prototype extension to MicroHs to target the WasmGC proposal (which is the basis for Wasm 3.0's GC support) and implemented a proof-of-concept runtime system written in a combination of WasmGC and a custom domain specific language (DSL). Initial experiments showed promising results in terms of binary size, however runtime performance was not tested.
-\\\\
-This thesis aims to extend Anand's work by: 
+\paragraph{Contributions} We aim to explore the effects of using WasmGC as a target for Haskell-to-Wasm compilers, which we will do by extending an existing Haskell compiler MicroHs~\cite{microhs} to target WasmGC. Concretely, we will do the following:
 \begin{enumerate}
-    \item Fully implementing the runtime system in a custom DSL that compiles to Wasm 3.0.
-    \item Extending support for more Haskell features by implementing runtime and backend support for new combinators and primitive operations, or by implementing a new simplified prelude that can compile to a smaller set of combinators.
-    \item Evaluating the size and runtime performance of the generated Wasm binaries against other Haskell-to-Wasm compilers and MicroHs's existing C backend.
+    \item Design and implement a custom domain specific language (DSL) for generating WasmGC code, for use in the runtime system and backend of the compiler. This will help us to write more maintainable and readable code compared to writing raw WasmGC.
+    \item Design and implement a runtime system for the WasmGC backend using the custom DSL.
+    \item Evaluate the produced Wasm binaries in terms of size and runtime performance against other Haskell-to-Wasm compilers and MicroHs's existing C backend.
 \end{enumerate}
 
-\noindent
-The rest of this thesis proposal is structured as follows:
+We expect that using WasmGC will lead to smaller binary sizes due to a smaller runtime system (without a custom GC) and improved performance due WasmGC specific optimizations in Wasm engines and optimizers.
+
+\paragraph{Previous Work}
+
+Previously, Anand~\cite{anandthesis} made a prototype extension to MicroHs to target WasmGC and implemented a proof-of-concept runtime system written in a combination of WasmGC and a custom DSL. Initial experiments showed promising results in terms of binary size, however runtime performance was not tested. Our work will extend this work with a new DSL capable of generating the full runtime system instead of just parts of it, building a more complete runtime system that supports more Haskell features, and evaluating the runtime performance of the generated Wasm binaries.
+
+\paragraph{Document Structure} The rest of this thesis proposal is structured as follows:
 \begin{itemize}
     \item Chapter~\ref{ch:background} provides the reader with the necessary background on WebAssembly and the architecture of MicroHs.
+    \item Chapter~\ref{ch:runtime} describes the design and implementation of the WasmGC backend and runtime system.
+    \item Chapter~\ref{ch:prelim} describes preliminary results on the runtime performance of the generated Wasm binaries.
     \item Chapter~\ref{ch:related_work} discusses related work on the topic.
-    \item Chapter~\ref{ch:progress} details the progress made on the project during Part 1 of the thesis.
     \item Chapter~\ref{ch:plan} outlines the plan for Part 2 of the thesis.
 \end{itemize}

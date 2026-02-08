@@ -49,3 +49,4 @@ v8
 .bak 
 .mtc
 build/
+**/_minted-*/
