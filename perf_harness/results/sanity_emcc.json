@@ -1,0 +1,292 @@
+{
+  "timestamp": "2026-02-19T14:03:14.188Z",
+  "results": {
+    "filePath": "programs/sanity_emcc.js",
+    "fileType": ".js",
+    "functionName": "script_execution",
+    "iterations": 10,
+    "warmupRuns": 100,
+    "runs": [
+      {
+        "iteration": 1,
+        "executionTime": 2.541179,
+        "result": 0,
+        "memory": {
+          "before": {
+            "heapUsed": 7758696,
+            "heapTotal": 19333120,
+            "external": 29699264,
+            "rss": 140627968
+          },
+          "after": {
+            "heapUsed": 8491168,
+            "heapTotal": 19697664,
+            "external": 30244264,
+            "rss": 140890112
+          },
+          "delta": {
+            "heapUsed": 732472,
+            "heapTotal": 364544,
+            "external": 545000,
+            "rss": 262144
+          }
+        }
+      },
+      {
+        "iteration": 2,
+        "executionTime": 2.463876,
+        "result": 0,
+        "memory": {
+          "before": {
+            "heapUsed": 8495160,
+            "heapTotal": 19697664,
+            "external": 30244264,
+            "rss": 140890112
+          },
+          "after": {
+            "heapUsed": 9226840,
+            "heapTotal": 20062208,
+            "external": 30789264,
+            "rss": 141414400
+          },
+          "delta": {
+            "heapUsed": 731680,
+            "heapTotal": 364544,
+            "external": 545000,
+            "rss": 524288
+          }
+        }
+      },
+      {
+        "iteration": 3,
+        "executionTime": 2.423603,
+        "result": 0,
+        "memory": {
+          "before": {
+            "heapUsed": 9228920,
+            "heapTotal": 20062208,
+            "external": 30789264,
+            "rss": 141414400
+          },
+          "after": {
+            "heapUsed": 9960640,
+            "heapTotal": 20426752,
+            "external": 31334264,
+            "rss": 141676544
+          },
+          "delta": {
+            "heapUsed": 731720,
+            "heapTotal": 364544,
+            "external": 545000,
+            "rss": 262144
+          }
+        }
+      },
+      {
+        "iteration": 4,
+        "executionTime": 2.973984,
+        "result": 0,
+        "memory": {
+          "before": {
+            "heapUsed": 9962424,
+            "heapTotal": 20426752,
+            "external": 31334264,
+            "rss": 141676544
+          },
+          "after": {
+            "heapUsed": 10694128,
+            "heapTotal": 20791296,
+            "external": 31879264,
+            "rss": 142987264
+          },
+          "delta": {
+            "heapUsed": 731704,
+            "heapTotal": 364544,
+            "external": 545000,
+            "rss": 1310720
+          }
+        }
+      },
+      {
+        "iteration": 5,
+        "executionTime": 3.337377,
+        "result": 0,
+        "memory": {
+          "before": {
+            "heapUsed": 10696472,
+            "heapTotal": 20791296,
+            "external": 31879264,
+            "rss": 142987264
+          },
+          "after": {
+            "heapUsed": 11428088,
+            "heapTotal": 21155840,
+            "external": 32424264,
+            "rss": 144560128
+          },
+          "delta": {
+            "heapUsed": 731616,
+            "heapTotal": 364544,
+            "external": 545000,
+            "rss": 1572864
+          }
+        }
+      },
+      {
+        "iteration": 6,
+        "executionTime": 3.616535,
+        "result": 0,
+        "memory": {
+          "before": {
+            "heapUsed": 11430232,
+            "heapTotal": 21155840,
+            "external": 32424264,
+            "rss": 144560128
+          },
+          "after": {
+            "heapUsed": 12162536,
+            "heapTotal": 21520384,
+            "external": 32969264,
+            "rss": 145870848
+          },
+          "delta": {
+            "heapUsed": 732304,
+            "heapTotal": 364544,
+            "external": 545000,
+            "rss": 1310720
+          }
+        }
+      },
+      {
+        "iteration": 7,
+        "executionTime": 3.767312,
+        "result": 0,
+        "memory": {
+          "before": {
+            "heapUsed": 12164320,
+            "heapTotal": 21520384,
+            "external": 32969264,
+            "rss": 145870848
+          },
+          "after": {
+            "heapUsed": 12899520,
+            "heapTotal": 21884928,
+            "external": 33514264,
+            "rss": 147181568
+          },
+          "delta": {
+            "heapUsed": 735200,
+            "heapTotal": 364544,
+            "external": 545000,
+            "rss": 1310720
+          }
+        }
+      },
+      {
+        "iteration": 8,
+        "executionTime": 2.831677,
+        "result": 0,
+        "memory": {
+          "before": {
+            "heapUsed": 12901304,
+            "heapTotal": 21884928,
+            "external": 33514264,
+            "rss": 147181568
+          },
+          "after": {
+            "heapUsed": 13633040,
+            "heapTotal": 22249472,
+            "external": 34059264,
+            "rss": 148754432
+          },
+          "delta": {
+            "heapUsed": 731736,
+            "heapTotal": 364544,
+            "external": 545000,
+            "rss": 1572864
+          }
+        }
+      },
+      {
+        "iteration": 9,
+        "executionTime": 3.040199,
+        "result": 0,
+        "memory": {
+          "before": {
+            "heapUsed": 13634824,
+            "heapTotal": 22249472,
+            "external": 34059264,
+            "rss": 148754432
+          },
+          "after": {
+            "heapUsed": 14377800,
+            "heapTotal": 22614016,
+            "external": 34604264,
+            "rss": 150065152
+          },
+          "delta": {
+            "heapUsed": 742976,
+            "heapTotal": 364544,
+            "external": 545000,
+            "rss": 1310720
+          }
+        }
+      },
+      {
+        "iteration": 10,
+        "executionTime": 3.076657,
+        "result": 0,
+        "memory": {
+          "before": {
+            "heapUsed": 14379584,
+            "heapTotal": 22614016,
+            "external": 34604264,
+            "rss": 150065152
+          },
+          "after": {
+            "heapUsed": 15114240,
+            "heapTotal": 22978560,
+            "external": 35149264,
+            "rss": 151375872
+          },
+          "delta": {
+            "heapUsed": 734656,
+            "heapTotal": 364544,
+            "external": 545000,
+            "rss": 1310720
+          }
+        }
+      }
+    ],
+    "summary": {
+      "count": 10,
+      "min": 2.423603,
+      "max": 3.767312,
+      "mean": 3.0072399,
+      "median": 3.0070915,
+      "stdDev": 0.4414592920121741,
+      "p95": 3.767312,
+      "p99": 3.767312,
+      "memoryUsage": {
+        "initial": {
+          "heapUsed": 7752056,
+          "heapTotal": 19333120,
+          "external": 32696724,
+          "rss": 140627968
+        },
+        "final": {
+          "heapUsed": 15128464,
+          "heapTotal": 22978560,
+          "external": 35149264,
+          "rss": 151638016
+        },
+        "totalDelta": {
+          "heapUsed": 7376408,
+          "heapTotal": 3645440,
+          "external": 2452540,
+          "rss": 11010048
+        }
+      }
+    }
+  }
+}
