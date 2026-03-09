@@ -1,0 +1,573 @@
+% Chapter 1
+
+\chapter{Chapter Title Here} % Main chapter title
+
+\label{Chapter1} % For referencing the chapter elsewhere, use \ref{Chapter1} 
+
+%----------------------------------------------------------------------------------------
+
+% Define some commands to keep the formatting separated from the content 
+\newcommand{\keyword}[1]{\textbf{#1}}
+\newcommand{\tabhead}[1]{\textbf{#1}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\file}[1]{\texttt{\bfseries#1}}
+\newcommand{\option}[1]{\texttt{\itshape#1}}
+
+%----------------------------------------------------------------------------------------
+
+\section{Welcome and Thank You}
+\label{sec:welcome}
+Welcome to this \LaTeX{} Thesis Template, a template for writing a
+thesis using the \LaTeX{} typesetting system.
+
+If you are writing a thesis (or will be in the future) and its subject
+is technical, then creating it in \LaTeX{} is highly recommended as a
+way to make sure you can just get down to the essential writing without
+having to worry over formatting or wasting time arguing with your word
+processor.
+
+\LaTeX{} is easily able to professionally typeset documents that run to
+hundreds or thousands of pages long. With simple mark-up commands, it
+automatically sets out the table of contents, margins, page headers and
+footers and keeps the formatting consistent and beautiful. One of its
+main strengths is the way it can easily typeset mathematics, even
+\emph{heavy} mathematics. Even if those equations are the most horribly
+twisted and most difficult mathematical problems that can only be solved
+on a super-computer, you can at least count on \LaTeX{} to make them
+look stunning.
+
+%----------------------------------------------------------------------------------------
+
+\section{Learning \LaTeX{}}
+\label{sec:learning}
+
+\LaTeX{} is not a \textsc{wysiwyg} (What You See is What You Get)
+program, unlike word processors such as Microsoft Word or Apple's
+Pages. Instead, a document written for \LaTeX{} is actually a simple,
+plain text file that contains \emph{no formatting}. You tell \LaTeX{}
+how you want the formatting in the finished document by writing in
+simple commands amongst the text, for example, if I want to use
+\emph{italic text for emphasis}, I write the \verb|\emph{text}| command
+and put the text I want in italics in between the curly braces. This
+means that \LaTeX{} is a \enquote{mark-up} language, very much like
+HTML.
+
+\subsection{A (not so short) Introduction to \LaTeX{}}
+
+If you are new to \LaTeX{}, there is a very good eBook -- freely
+available online as a PDF file -- called, \enquote{The Not So Short
+  Introduction to \LaTeX{}}. The book's title is typically shortened to
+just \emph{lshort}. You can download the latest version (as it is
+occasionally updated) from here:
+\url{http://www.ctan.org/tex-archive/info/lshort/english/lshort.pdf}
+
+\subsection{A Short Math Guide for \LaTeX{}}
+
+If you are writing a technical or mathematical thesis, then you may want
+to read the document by the AMS (American Mathematical Society) called,
+\enquote{A Short Math Guide for \LaTeX{}}. It can be found online here:
+\url{http://www.ams.org/tex/amslatex.html} under the \enquote{Additional
+  Documentation} section towards the bottom of the page.
+
+\subsection{Common \LaTeX{} Math Symbols}
+There are a multitude of mathematical symbols available for \LaTeX{} and
+it would take a great effort to learn the commands for them all. The
+most common ones you are likely to use are shown on this page:
+\url{http://www.sunilpatel.co.uk/latex-type/latex-math-symbols/}
+
+You can use this page as a reference or crib sheet, the symbols are
+rendered as large, high quality images so you can quickly find the
+\LaTeX{} command for the symbol you need.
+
+\subsection{\LaTeX{} on a Mac}
+ 
+The \LaTeX{} distribution is available for many systems including
+Windows, Linux and Mac OS X. The package for OS X is called MacTeX and
+it contains all the applications you need -- bundled together and
+pre-customized -- for a fully working \LaTeX{} environment and work
+flow.
+ 
+MacTeX includes a custom dedicated \LaTeX{} editor called TeXShop for
+writing your `\file{.tex}' files and BibDesk: a program to manage your
+references and create your bibliography section just as easily as
+managing songs and creating playlists in iTunes.
+
+%----------------------------------------------------------------------------------------
+
+\section{Getting Started with this Template}
+\label{sec:started}
+
+If you are familiar with \LaTeX{}, then you should explore the directory
+structure of the template and then proceed to place your own information
+into the \emph{THESIS INFORMATION} block of the \file{main.tex}
+file. You can then modify the rest of the file to add your name, the
+names of your supervisors, and title of your thesis. 
+
+If you are new to \LaTeX{} it is recommended that you carry on reading
+through the rest of the information in this document.
+
+\subsection{About this Template}
+
+This \LaTeX{} Thesis Template is originally based and created around a
+\LaTeX{} style file created by Steve R.\ Gunn from the University of
+Southampton (UK), department of Electronics and Computer Science. You
+can find his original thesis style file at his site, here:
+\url{http://www.ecs.soton.ac.uk/~srg/softwaretools/document/templates/}
+
+Steve's \file{ecsthesis.cls} was then taken by Sunil Patel who modified
+it by creating a skeleton framework and folder structure to place the
+thesis files in. The resulting template can be found on Sunil's site
+here: \url{http://www.sunilpatel.co.uk/thesis-template}
+
+Sunil's template was made available through
+\url{http://www.LaTeXTemplates.com} where it was modified many times
+based on user requests and questions. Version 2.0 and onwards of this
+template represents a major modification to Sunil's template and is, in
+fact, hardly recognisable. The work to make version 2.0 possible was
+carried out by \href{mailto:vel@latextemplates.com}{Vel} and Johannes
+Böttcher.
+
+The template and thesis class was later adapted by Wouter Swierstra,
+adding the specific information relevant for students at Utrecht
+University.
+
+%----------------------------------------------------------------------------------------
+
+\section{What this Template Includes}
+
+\subsection{Folders}
+
+This template comes as a single zip file that expands out to several
+files and folders. The folder names are mostly self-explanatory:
+
+\keyword{chapters} -- this is the folder where you put the thesis
+chapters. You may want to split each chapter in its own separate
+\file{.tex} file and they can be split as:
+\begin{itemize}
+\item Chapter 1: Introduction to the thesis topic
+\item \ldots
+\item Chapter N: Conclusion and future directions
+\end{itemize}
+
+\keyword{img} -- this folder contains all images for the thesis. It's a
+bit cleaner to store images in a separate directory.
+
+\subsection{Files}
+
+Included are also several files, most of them are plain text and you can
+see their contents in a text editor. After initial compilation, you will
+see that more auxiliary files are created by \LaTeX{} or BibTeX and
+which you don't need to delete or worry about:
+
+\keyword{main.bib} -- this is an important file that contains all the
+bibliographic information and references that you will be citing in the
+thesis for use with BibTeX. You can write it manually, but there are
+reference manager programs available that will create and manage it for
+you. Bibliographies in \LaTeX{} are a large subject and you may need to
+read about BibTeX before starting with this. Many modern reference
+managers will allow you to export your references in BibTeX format which
+greatly eases the amount of work you have to do.
+
+\keyword{thesis.cls} -- this is an important file. It is the class file
+that tells \LaTeX{} how to format the thesis.
+
+\keyword{main.pdf} -- this is your beautifully typeset thesis (in the
+PDF file format) created by \LaTeX{}. It is supplied in the PDF with the
+template and after you compile the template you should get an identical
+version.
+
+\keyword{main.tex} -- this is an important file. This is the file that
+you tell \LaTeX{} to compile to produce your thesis as a PDF file. It
+contains the framework and constructs that tell \LaTeX{} how to layout
+the thesis. It is heavily commented so you can read exactly what each
+line of code does and why it is there. After you put your own
+information into the \emph{THESIS INFORMATION} block -- you have now
+started your thesis!
+
+Files that are \emph{not} included, but are created by \LaTeX{} as
+auxiliary files include:
+
+\keyword{main.aux} -- this is an auxiliary file generated by \LaTeX{},
+if it is deleted \LaTeX{} simply regenerates it when you run the main
+\file{.tex} file.
+
+\keyword{main.bbl} -- this is an auxiliary file generated by BibTeX, if
+it is deleted, BibTeX simply regenerates it when you run the
+\file{main.aux} file. Whereas the \file{.bib} file contains all the
+references you have, this \file{.bbl} file contains the references you
+have actually cited in the thesis and is used to build the bibliography
+section of the thesis.
+
+\keyword{main.blg} -- this is an auxiliary file generated by BibTeX, if
+it is deleted BibTeX simply regenerates it when you run the main
+\file{.aux} file.
+
+\keyword{main.lof} -- this is an auxiliary file generated by \LaTeX{},
+if it is deleted \LaTeX{} simply regenerates it when you run the main
+\file{.tex} file. It tells \LaTeX{} how to build the \emph{List of
+  Figures} section, if you are using this.
+
+\keyword{main.log} -- this is an auxiliary file generated by \LaTeX{},
+if it is deleted \LaTeX{} simply regenerates it when you run the main
+\file{.tex} file. It contains messages from \LaTeX{}, if you receive
+errors and warnings from \LaTeX{}, they will be in this \file{.log}
+file.
+
+\keyword{main.lot} -- this is an auxiliary file generated by \LaTeX{},
+if it is deleted \LaTeX{} simply regenerates it when you run the main
+\file{.tex} file. It tells \LaTeX{} how to build the \emph{List of
+  Tables} section, if you are using this.
+
+\keyword{main.out} -- this is an auxiliary file generated by \LaTeX{},
+if it is deleted \LaTeX{} simply regenerates it when you run the main
+\file{.tex} file.
+
+So from this long list, only the files with the \file{.bib}, \file{.cls}
+and \file{.tex} extensions are the most important ones. The other
+auxiliary files can be ignored or deleted as \LaTeX{} and BibTeX will
+regenerate them.
+
+There is a very rudimentary \texttt{Makefile} included to build the
+thesis, including the bibliography, and delete any of these generated
+files.
+
+%----------------------------------------------------------------------------------------
+
+\section{Filling in Your Information in the \file{main.tex} File}
+\label{sec:filling}
+
+You will need to personalise the thesis template and make it your own by
+filling in your own information. This is done by editing the
+\file{main.tex} file in a text editor or your favourite LaTeX
+environment.
+
+Open the file and scroll down to the third large block titled
+\emph{THESIS INFORMATION}. Fill out the information about yourself, your
+supervisor, and your thesis title. 
+
+%----------------------------------------------------------------------------------------
+
+\section{The \code{main.tex} File Explained}
+\label{sec:main}
+
+The \file{main.tex} file contains the structure of the thesis. There are
+plenty of written comments that explain what pages, sections and
+formatting the \LaTeX{} code is creating. Each major document element is
+divided into commented blocks with titles in all capitals to make it
+obvious what the following bit of code is doing. Initially there seems
+to be a lot of \LaTeX{} code, but this is all formatting, and it has all
+been taken care of so you don't have to do it.
+
+Begin by checking that your information on the title page is
+correct. 
+
+Next come the acknowledgements. On this page, write about all the people
+who you wish to thank (not forgetting parents, partners and your
+advisor/supervisor).
+
+Finally, there is the block where the chapters are included. Uncomment
+the lines (delete the \code{\%} character) as you write the
+chapters. Each chapter should be written in its own file and put into
+the \emph{chapters} folder and named \file{chapter1}, \file{chapter2},
+etc\ldots Similarly for the appendices, uncomment the lines as you need
+them. Each appendix should go into its own file, also in the
+\emph{chapters} folder.
+
+After the preamble, chapters and appendices finally comes the
+bibliography. The bibliography style (called \option{authoryear}) is
+used for the bibliography and is a fully featured style that will even
+include links to where the referenced paper can be found online. If you
+want to use a different citation style, you may want to change the
+bibliography style. Check with your supervisor which style of
+bibliography is the most common in your area of research. Do not
+underestimate how grateful your reader will be to find that a reference
+to a paper is just a click away. Of course, this relies on you putting
+the URL information into the BibTeX file in the first place.
+
+%----------------------------------------------------------------------------------------
+
+\section{Thesis Features and Conventions}
+\label{sec:conventions}
+
+
+To get the best out of this template, there are a few conventions that
+you may want to follow.
+
+One of the most important (and most difficult) things to keep track of
+in such a long document as a thesis is consistency. Using certain
+conventions and ways of doing things (such as using a Todo list) makes
+the job easier. Of course, all of these are optional and you can adopt
+your own method.
+
+\subsection{Printing Format}
+
+The headers for the pages contain the page number on the outer side (so
+it is easy to flick through to the page you want) and the chapter name
+on the inner side.
+
+The text is set to 11 point by default with single line spacing, again,
+you can tune the text size and spacing should you want or need to using
+the options at the very start of \file{main.tex}.
+
+\subsection{References}
+
+The \code{biblatex} package is used to format the bibliography and
+inserts references to papers. To insert citations, use the
+\texttt{citep} command, e.g.~\citep{bodlaender:treewidth}. The default
+options used in the \file{main.tex} ensure that citations of references
+are formatted with the author(s) listed with the date of the
+publication. If a paper has many different authors, BibTeX will
+abbreviate all the authors after the first as so: \citep{chakravarty:data-parallel-haskell}.
+
+If you want to cite more than one paper at once, you can use the
+\texttt{citep} command to do so, separating references in the
+\texttt{tex} source with semicolons (e.g. \citep{bodlaender:treewidth,
+  chakravarty:data-parallel-haskell}).
+
+To see how you use references, have a look at the \file{Chapter1.tex}
+source file. You can customize the bibliography style -- there are
+different ways to include citations in your text. For example, you can
+also write: \citet{bodlaender:treewidth} did amazing work; or only the
+display the year of publication \citeyear{bodlaender:treewidth}. There
+is a good
+\href{https://gking.harvard.edu/sites/g/files/omnuum7116/files/gking/files/natnotes2.pdf}{
+  cheatsheet available online}.
+
+Check with your supervisor how citations are typically given in your
+area of research; sometimes numbered citations are more common. If that
+is the case, be sure to change the bibliography style specified in
+\texttt{main.tex} file to:
+\begin{verbatim}
+\bibliographystyle{plain}
+\end{verbatim}
+
+Scientific references should come \emph{before} the punctuation mark if
+there is one (such as a comma or period). That is, write a citation like
+so~\citep{bodlaender:treewidth}. Never write a citation after a punctuation mark, like this.\citep{bodlaender:treewidth}
+
+Try to never use citations as a noun. It is fine to write
+``\citet{bodlaender:treewidth} presents an important result about
+treewidth'' -- but never write ''an important result about treewidth is
+found in \citep{bodlaender:treewidth}'' -- if you use a numerical
+bibliography style this is typically as something like ``an important
+result about treewidth is found in [\citenum{bodlaender:treewidth}]''
+which is very hard to understand as a reader!
+
+The bibliography is typeset with references listed in alphabetical order
+by the first author's last name. This is similar to the APA referencing
+style. To see how \LaTeX{} typesets the bibliography, have a look at the
+very end of this document (or just click on the reference number links
+in in-text citations).
+
+\subsection{Tables}
+
+Tables are an important way of displaying your results, below is an
+example table which was generated with this code:
+
+{\small
+\begin{verbatim}
+\begin{table}
+\caption{The effects of treatments X and Y on the four groups studied.}
+\label{tab:treatments}
+\centering
+\begin{tabular}{l l l}
+\toprule
+\tabhead{Groups} & \tabhead{Treatment X} & \tabhead{Treatment Y} \\
+\midrule
+1 & 0.2 & 0.8\\
+2 & 0.17 & 0.7\\
+3 & 0.24 & 0.75\\
+4 & 0.68 & 0.3\\
+\bottomrule\\
+\end{tabular}
+\end{table}
+\end{verbatim}
+}
+
+\begin{table}[h]
+\caption{The effects of treatments X and Y on the four groups studied.}
+\label{tab:treatments}
+\centering
+\begin{tabular}{l l l}
+\toprule
+\tabhead{Groups} & \tabhead{Treatment X} & \tabhead{Treatment Y} \\
+\midrule
+1 & 0.2 & 0.8\\
+2 & 0.17 & 0.7\\
+3 & 0.24 & 0.75\\
+4 & 0.68 & 0.3\\
+\bottomrule\\
+\end{tabular}
+\end{table}
+
+You can reference tables with \verb|\ref{<label>}| where the label is
+defined within the table environment. See \file{Chapter1.tex} for an
+example of the label and citation (e.g. Table~\ref{tab:treatments}).
+
+\subsection{Figures}
+
+There will hopefully be many figures in your thesis (that should be
+placed in the \emph{img} folder). The way to insert figures into
+your thesis is to use a code template like this:
+\begin{verbatim}
+\begin{figure}
+  \begin{center}
+  \includegraphics[scale=0.5]{img/logo.jpg}    
+  \end{center}
+  \caption{The UU logo}
+  \label{fig:uu-logo}
+\end{figure}
+\end{verbatim}
+Also look in the source file. Putting this code into the source file produces the picture of the UU logo, scaled down by 50\%.
+
+\begin{figure}
+  \begin{center}
+  \includegraphics[scale=0.5]{img/logo.jpg}    
+  \end{center}
+  \caption{The UU logo}
+  \label{fig:uu-logo}
+\end{figure}
+
+Sometimes figures don't always appear where you write them in the
+source. The placement depends on how much space there is on the page for
+the figure. Sometimes there is not enough room to fit a figure directly
+where it should go (in relation to the text) and so \LaTeX{} puts it at
+the top of the next page. Positioning figures is the job of \LaTeX{} and
+so you should only worry about making them look good!
+
+Figures usually should have captions just in case you need to refer to
+them (such as in Figure~\ref{fig:uu-logo}). The \verb|\caption| command
+contains two parts, the first part, inside the square brackets is the
+title that will appear in the \emph{List of Figures}, and so should be
+short. The second part in the curly brackets should contain the longer
+and more descriptive caption text.
+
+\LaTeX{} is capable of using images in pdf, jpg and png format.
+
+\subsection{Typesetting mathematics}
+
+If your thesis is going to contain heavy mathematical content, be sure
+that \LaTeX{} will make it look beautiful, even though it won't be able
+to solve the equations for you.
+
+The \enquote{Not So Short Introduction to \LaTeX} (available on
+\href{http://www.ctan.org/tex-archive/info/lshort/english/lshort.pdf}{CTAN})
+should tell you everything you need to know for most cases of
+typesetting mathematics. If you need more information, a much more
+thorough mathematical guide is available from the AMS called, \enquote{A
+  Short Math Guide to \LaTeX} and can be downloaded from:
+\url{ftp://ftp.ams.org/pub/tex/doc/amsmath/short-math-guide.pdf}
+
+There are many different \LaTeX{} symbols to remember, luckily you can
+find the most common symbols in
+\href{http://ctan.org/pkg/comprehensive}{The Comprehensive \LaTeX~Symbol
+  List}.
+
+You can write an equation, which is automatically given an equation
+number by \LaTeX{} like this:
+\begin{verbatim}
+\begin{equation}
+P(A \mid B) = \frac{P(B \mid A)\, P(A)}{P(B)}
+\label{eqn:Bayes}
+\end{equation}
+\end{verbatim}
+
+This will produce Bayes' theorem about probabilities:
+\begin{equation}
+P(A \mid B) = \frac{P(B \mid A)\, P(A)}{P(B)}
+\label{eqn:bayes}
+\end{equation}
+
+All equations you write (which are not in the middle of paragraph text)
+are automatically given equation numbers by \LaTeX{}. Using the
+\texttt{label} and \texttt{ref} you can refer to the equation number;
+for example, Bayes' theorem above is numbered~\ref{eqn:bayes}.
+
+If you don't want a particular equation numbered, use the unnumbered
+form:
+\begin{verbatim}
+\[ a^{2}=4 \]
+\end{verbatim}
+
+The AMS Math package has several other environments that are very useful
+for writing mathematics. For example, you might want to define the notion of \emph{graph}:
+
+\begin{definition}[Graph]
+  \label{def:graph}
+A \emph{graph} is an ordered pair
+\[
+    G = (V, E),
+\]
+where \( V \) is a non-empty finite set whose elements are called
+\emph{vertices} (or \emph{nodes}), and
+\( E \subseteq \{ \{u, v\} \mid u, v \in V,\, u \neq v \} \) is a set of
+unordered pairs of distinct elements of \( V \), called \emph{edges}.
+
+If the elements of \( E \) are ordered pairs, that is,
+\[
+    E \subseteq V \times V,
+\]
+then \( G \) is called a \emph{directed graph} (or \emph{digraph}).
+\end{definition}
+%
+You read much more about producing such definitions and theorems in the
+documentation of the AMS math packages:
+
+\url{https://www.ams.org/arc/tex/amscls/amsthdoc.pdf}
+
+Once again, you can reference definitions that have a \texttt{label}
+command associated with them: graphs are defined in Definition~\ref{def:graph}.
+
+\subsection{Typesetting code}
+\label{sec:code}
+
+LaTeX has several options for typesetting code fragments.
+
+The easiest (and ugliest option) is using the \texttt{verbatim}
+enviroment. This type sets any code fragment using a monowidth font,
+without any syntax highlighting.
+
+\begin{verbatim}
+# A Python script to print the string "Hello world"
+print{"Hello world")
+\end{verbatim}
+
+Nowadays, there are more advanced typesetting packages for typesetting
+syntax highligted code, such as \texttt{minted}:
+
+\url{https://tug.ctan.org/macros/latex/contrib/minted/minted.pdf}
+
+\noindent Alternatively, there are pre-processors such as \texttt{lhs2TeX} to
+produce typeset Haskell code:
+
+\url{https://www.andres-loeh.de/lhs2tex/}
+
+\noindent Instead of a LaTeX package, this is a pre-processor that produces LaTeX
+code. It is customizable and may be used to produce a variety different
+styles.
+
+% ----------------------------------------------------------------------------------------
+
+\section{Sectioning and Subsectioning}
+\label{sec:sec}
+
+You should break your thesis up into nice, bite-sized sections and
+subsections. \LaTeX{} automatically builds a table of Contents by
+looking at all the \verb|\chapter{}|, \verb|\section{}| and
+\verb|\subsection{}| commands you write in the source.
+
+The Table of Contents should only list the sections to three (3)
+levels. A \verb|chapter{}| is level zero (0). A \verb|\section{}| is
+level one (1) and so a \verb|\subsection{}| is level two (2). In your
+thesis it is likely that you will even use a \verb|subsubsection{}|,
+which is level three (3). The depth to which the Table of Contents is
+formatted is set within \file{thesis.cls}. If you need this changed, you
+can do it in \file{main.tex}.
+
+By adding a \texttt{label} command to the start of a section, you can
+refer to it easily later. For example, this is
+Section~\ref{sec:sec}. Have a look at the \texttt{.tex} source to
+understand how this works.
+
+%----------------------------------------------------------------------------------------
+
