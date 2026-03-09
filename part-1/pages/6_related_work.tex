@@ -2,7 +2,7 @@
 \section{Haskell for the Web}
 Historically, running Haskell code in web browsers has been achieved using GHCJS~\cite{ghcjs}, a compiler that transpiles Haskell code to JavaScript. While GHCJS allows Haskell code to run in browsers, it suffers from multiple problems. Due to it having to include large parts of the GHC runtime system resulting in large bundle sizes~\cite{yorhel}. Furthermore, the development has lagged behind GHC itself, causing GHCJS to not be able to take advantage of the latest compiler optimizations and language extensions~\cite{ghcjs}. 
 
-Other Haskell-to-JavaScript compilers exist, such as UHC~\cite{uhcjs} Fay~\cite{fay}, and Haste~\cite{haste}. However, each of these compilers have not seen active development in recent years, and thus are not suitable for modern Haskell web development. 
+% Other Haskell-to-JavaScript compilers exist, such as UHC~\cite{uhcjs} Fay~\cite{fay}, and Haste~\cite{haste}. However, each of these compilers have not seen active development in recent years, and thus are not suitable for modern Haskell web development. 
 
 % maybe mention https://dl.acm.org/doi/10.1145/3547621
 WebAssembly has emerged as a promising alternative for running Haskell code on the web. Originally through the Asterius project~\cite{asterius}, and more recently through GHC's own Wasm backend~\cite{ghcwasm}. Programs can also be compiled to Wasm by MicroHs, by first compiling to C and then using emscripten~\cite{emscripten} to compile the C code to Wasm. However, all of these approaches target traditional Wasm without GC support. This means they have to include a memory management system in the produced Wasm binaries, leading to larger binary sizes.

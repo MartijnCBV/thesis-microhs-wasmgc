@@ -83,3 +83,7 @@
 
 \def\changemargin#1#2{\list{}{\rightmargin#2\leftmargin#1}\item[]}
 \let\endchangemargin=\endlist 
+
+\newlist{questions}{enumerate}{2}
+\setlist[questions,1]{label=\makebox[2.5em][l]{Q\arabic*.},ref=Q\arabic*}
+\setlist[questions,2]{label=(\alph*),ref=\thequestionsi(\alph*)}

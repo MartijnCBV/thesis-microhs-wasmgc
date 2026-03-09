@@ -1,8 +1,6 @@
 \chapter{Background}\label{ch:background}
 \section{MicroHs}\label{sec:background:microhs}
-
-MicroHs is a small Haskell compiler that has a relatively standard compilation pipeline. The compiler starts by parsing the Haskell source code into an abstract syntax tree (AST). The AST is then type-checked and subsequently desugared into lambda terms. The lambda terms are optimized and then transformed into combinators through the use of a process called bracket abstraction. After which the abstract representation of the combinators is converted into a useable format for the runtime written in C. When this is done, the runtime system and combinators are combined into a single C codebase, which is then either compiled to a native executable using a standard C compiler or converted to WebAssembly using Emscripten We are mostly interested in the final stages of the pipeline. The process is illustrated in Figure~\ref{fig:microhs-pipeline}. The compiler is bootstrapped, meaning that it is written in Haskell and compiles itself. The source code for the compiler can be found on GitHub~\cite{microhsrepo}.
-
+MicroHs~\cite{microhs,microhsrepo} is a minimal Haskell compiler written in Haskell, with a runtime system written in C. MicroHs follows a standard compilation pipeline, where it starts by parsing the Haskell source code, then type-checking it, desugaring it into lambda terms, optimizing the lambda terms, and finally transforming the lambda terms into combinators through a process called bracket abstraction. MicroHs converts the combinators into C code, which is then combined with the runtime system into a single C codebase. This codebase can then be compiled with standard C compilers to obtain a native executable, or to Wasm using Emscripten~\cite{emscripten}. The compilation pipeline is illustrated in Figure~\ref{fig:microhs-pipeline}.
 \begin{figure}[t]
 \centering
 \resizebox{\textwidth}{!}{%
@@ -39,30 +37,33 @@ MicroHs is a small Haskell compiler that has a relatively standard compilation p
 \end{figure}
 
 \paragraph{Combinators}
-MicroHs uses a combination of SKI combinators, an extended set of combinators, and primitive operations (intrinsics for arithmetic, I/O, etc.) to represent Haskell code. SKI combinators are a small set of combinators that can be used to represent any lambda term. The three basic SKI combinators are:
+MicroHs uses a combination of combinators and primitive operations to represent compiled Haskell code. SKI combinators are a small set of combinators that can be used to represent any lambda term. The three basic SKI combinators are:
 \begin{align*}
     S \; x \; y \; z & = x \; z \; (y \; z) \\
-    K \; x \; y & = x \\
-    I \; x & = x
+    K \; x \; y      & = x \\
+    I \; x           & = x
 \end{align*}
-Further combinators include those used by Turner~\cite{turner} or are added by MicroHs itself to improve performance of the generated code. The reduction rules for these combinators are as follows:
-\begin{align*}
-    B \; x \; y \; z & = x \; (y \; z) \\
-    C \; x \; y \; z & = x \; z \; y \\
-    S' \; x \; y \; z \; w & = x \; (y \; w) \; (z \; w) \\
-    B' \; x \; y \; z \; w & = x \; y \; (z \; w) \\
-    C' \; x \; y \; z \; w & = x \; (y \; w) \; z \\
-    A \; x \; y & = y \\
-    U \; x \; y & = y \; x \\
-    Z \; x \; y \; z & = x \; y \\
-    P \; x \; y \; z & = z \; x \; y \\
-    R \; x \; y \; z & = y \; z \; x \\
-    O \; x \; y \; z \; w & = w \; x \; y \\
-    Y \; x & = x \; (Y \; x) \\
-    K2 \; x \; y \; z & = x \\
-    K3 \; x \; y \; z \; w & = x \\
-    K4 \; x \; y \; z \; w \; v & = x
-\end{align*}
+Further combinators include those used by Turner~\cite{turner} or are added by MicroHs itself to improve performance of the generated code. 
+
+Primitive operations can be divided into two types: strict primitives and non-strict primitives. Strict primitives require all of their arguments to be reduced to weak head normal form (WHNF) before they can be applied, while non-strict primitives can be applied without reducing their arguments first. WHNF in the context of combinators means that the argument is either a primitive value (e.g. an integer) or a combinator or primitive application with to few arguments to be reduced. Examples of strict primitives include arithmetic operations such as addition and multiplication, while examples of non-strict primitives include the monad operations for the IO monad (\text{return} and \texttt{>>=}).
+% The reduction rules for these combinators are as follows:
+% \begin{align*}
+%     B \; x \; y \; z & = x \; (y \; z) \\
+%     C \; x \; y \; z & = x \; z \; y \\
+%     S' \; x \; y \; z \; w & = x \; (y \; w) \; (z \; w) \\
+%     B' \; x \; y \; z \; w & = x \; y \; (z \; w) \\
+%     C' \; x \; y \; z \; w & = x \; (y \; w) \; z \\
+%     A \; x \; y & = y \\
+%     U \; x \; y & = y \; x \\
+%     Z \; x \; y \; z & = x \; y \\
+%     P \; x \; y \; z & = z \; x \; y \\
+%     R \; x \; y \; z & = y \; z \; x \\
+%     O \; x \; y \; z \; w & = w \; x \; y \\
+%     Y \; x & = x \; (Y \; x) \\
+%     K2 \; x \; y \; z & = x \\
+%     K3 \; x \; y \; z \; w & = x \\
+%     K4 \; x \; y \; z \; w \; v & = x
+% \end{align*}
 
 \paragraph{Representing Combinators}
 To efficiently represent combinators and their arguments, MicroHs uses a graph representation. Each node can either be a leave node storing a combinator or a primitive value, or an internal node storing a reference to its left and right children. This allows for efficient sharing of subterms and avoids the need for copying when reducing combinators. For example, the combinator application \texttt{K (I x) y} can be represented as the graph shown in Figure~\ref{fig:combinator-graph}.
@@ -88,9 +89,7 @@ To efficiently represent combinators and their arguments, MicroHs uses a graph r
 \end{figure}
 
 \paragraph{Runtime System}
-After building the graph representation of the combinators, the runtime system is responsible for reducing the graph to weak head normal form (WHNF). This is done by repeatadly walking the left spine of the graph until a leaf storing a combinator is reached, at which point the reduction rules for that combinator are applied. Since the reduction rules for most combinators involve multiple arguments, the runtime system maintains a left ancestor stack (LAS) to keep track of the ancestors of the current node (the left spine of the graph). This allows the runtime system to efficiently access the arguments needed for reduction without having to traverse the graph multiple times. An example reduction for the combinator application \texttt{K (I x) y} is shown in Figure~\ref{fig:combinator-reduction}. 
-
-Another important thing to note about the runtime system is the existence of strict primitives, such as arithmetic operations, which require all of their arguments to be fully reduced before they can be applied. This means that when the runtime system encounters a strict primitive, it must first reduce all of its arguments to WHNF before applying the primitive operation and continuing with the reduction of the resulting graph.
+After building the graph representation of the combinators, the runtime system is responsible for reducing the graph to WHNF. This is done by repeatadly walking the left spine of the graph until a leaf storing a combinator is reached, at which point the reduction rules for that combinator are applied. Since the reduction rules for most combinators involve multiple arguments, the runtime system maintains a left ancestor stack (LAS) to keep track of the ancestors of the current node (the left spine of the graph). This allows the runtime system to efficiently access the arguments needed for reduction without having to traverse the graph multiple times. An example reduction for the combinator application \texttt{K (I x) y} is shown in Figure~\ref{fig:combinator-reduction}. 
 
 \begin{figure}[t]
 \centering
@@ -208,8 +207,31 @@ Another important thing to note about the runtime system is the existence of str
 \label{fig:combinator-reduction}
 \end{figure}
 
+We can use the algorithm shown in Algorithm~\ref{alg:graph_reduction} to perform the reduction. The \texttt{step} function takes the current node, the left ancestor stack, and the left ancestor stack pointer as input and returns the new current node and the updated left ancestor stack pointer after performing one reduction step. The algorithm continues until the current node is fully reduced (i.e. it is a leaf storing a primitive value or an application with to few arguments to be reduced).
+\begin{algorithm}
+  \caption{Graph reduction algorithm based on \cite{turner}.}
+  \label{alg:graph_reduction}
+  \SetKwInOut{Input}{Input}
+  \SetKwInOut{Output}{Output}
+  \SetKwComment{Comment}{/* }{ */}
+  \Input{Node \texttt{n} to reduce}
+  \Output{Reduced node}
+  $las \gets \emptyset$\;
+  $las_{pointer} \gets -1$\;
+  $cur \gets n$\;
+  \While{$cur$ is not fully reduced}{
+      \eIf{$cur$ is a combinator}{
+          $(cur, las_{pointer}) \gets \text{step}(cur, las, las_{pointer})$\;
+      }{
+          $cur \gets \text{leftChild}(cur)$\;
+      }
+      $las[las_{pointer}] \gets cur$\;
+      $las_{pointer} \gets las_{pointer} + 1$\;
+  }
+\end{algorithm}
+
 \section{WebAssembly}\label{sec:background:wasm}
-Wasm is a binary stack-based instruction format. Wasm programs are ran inside a host environment that can influence the wasm code through imports and exports. The programs themselves are organized into modules containing functions, memory, imports/exports, and other components.
+Wasm is a binary stack-based instruction format. Wasm programs run in an isolated environment by construction. They can be interacted with from outside of the environment through imports and exports, this allows Wasm modules to call (imported) functions such as printing to the console, and allows a host environment to initiate the execution of a Wasm module by calling an exported function. The programs themselves are organized into modules containing functions, memory, imports/exports, and other components.
 
 Wasm has a text format called WAT (WebAssembly Text format) which is a human-readable representation of the binary format. From now on we will use WAT syntax to illustrate Wasm concepts. Using WAT a simple list of instructions that adds two numbers looks like this:
 \begin{minted}{wat}
@@ -219,71 +241,43 @@ Wasm has a text format called WAT (WebAssembly Text format) which is a human-rea
 \end{minted}
 The first two instructions push the constants 1 and 2 onto the stack, and the last instruction pops the two values from the stack, adds them together, and pushes the result (3) back onto the stack.
 
-\paragraph{Instructions}
-Instructions in Wasm are the basic building blocks of computation. They can be broadly categorized into two types: control flow instructions and simple instructions.
+\paragraph{Instructions and Functions}
+Instructions in Wasm are the basic building blocks of computation, including simple operations like \texttt{i32.add} for arithmetic and \texttt{local.get} and \texttt{local.set} for variable access. Control flow uses structured instructions such as \texttt{if}, \texttt{block}, \texttt{loop}, and \texttt{br} (branch), where conditions are represented as integers (0 is false, non-zero is true). Branching to a block label continues execution after the block end, while loop labels restart at the loop beginning.
 
-Simple instructions perform basic operations such as arithmetic, logical operations, and memory access. Examples include \texttt{i32.add} for adding two 32-bit integers, \texttt{i32.sub} for subtraction, and \texttt{local.get} and \texttt{local.set} for accessing local variables.
+Functions are blocks of code that can take parameters, return results, and contain local variables. They are defined using the \texttt{func} keyword and can be called with the \texttt{call} instruction.
 
-Control flow instructions manage the flow of execution within a function. Examples include \texttt{if}, \texttt{block}, \texttt{loop}, and \texttt{br} (branch). These instructions allow for conditional execution, loops, and jumps within the function body. Since Wasm does not have boolean types, conditions are represented using integers, where 0 is false and any non-zero value is true. When branching to a label belonging to a block, the execution continues after the end of the block. A loop label, on the other hand, causes execution to continue at the beginning of the loop. An example of the control flow instructions in action is shown below:
+An example piece of wasm code that demonstrates control flow and function calls is shown below:
 \begin{minted}{wat}
+;; import a print function
+(import "env" "print" (func $print (param i32)))
+
 (block $exit
   (loop $loop
-    ;; check if counter == 0
     (local.get $counter)
     (i32.const 0)
     (i32.eq)
-    (br_if $exit) ;; if counter == 0, exit block
-    ;; decrease counter
+    (br_if $exit) ;; exit if counter == 0
     (local.get $counter)
     (i32.const 1)
     (i32.sub)
     (local.set $counter)
+    (local.get $counter)
+    (call $print)
     (br $loop) ;; continue looping
   )
 )
 \end{minted}
 
-\paragraph{Functions}
-Functions in Wasm consist of zero or more parameters, results, and local variables, and a body containing instructions. A simple function that adds two numbers and doubles the result can be defined like this:
-\begin{minted}{wat}
-(func $addAndDouble (param $a i32) (param $b i32) (result i32)
-  (local $sum i32)
-  (local.get $a)
-  (local.get $b)
-  (i32.add)
-  (local.set $sum)
-  (local.get $sum)
-  (local.get $sum)
-  (i32.add)
-)
-\end{minted}
-In this example the function takes two parameters of type \texttt{i32} and returns a single \texttt{i32} result. The body of the function retrieves the parameters from the stack, adds them together, stores the result in a local variable, and then doubles the result by adding it to itself before returning it (a return is done by leaving the result on the stack at the end of the function body).
-
-Functions can be called using the \texttt{call} instruction, which takes the function identifier as an argument and expects the appropriate number of arguments to be on the stack:
-\begin{minted}{wat}
-(i32.const 1)
-(i32.const 2)
-(call $add)
-\end{minted}
-
 \paragraph{Types}
-Wasm has a couple of different categories of types, the most basic ones are the primitive numeric types, these include \texttt{i32} (32-bit integer), \texttt{i64} (64-bit integer), \texttt{f32} (32-bit float), and \texttt{f64} (64-bit float), as well as \texttt{v128} (128-bit SIMD vector). 
+Wasm's type system consists of value types and heap types. Value types include primitive numeric types such as \texttt{i32} (32-bit integer) and \texttt{i64} (64-bit integer), and reference types. 
 
-We can also box types through the use of references (note that references are explicitly typed in Wasm, meaning that every reference has a specific type associated with it), these have special instructions for manipulating them: \texttt{ref.null}, \texttt{ref.is\_null}, \texttt{ref.cast}, \texttt{ref.test}, and \texttt{ref.eq}. \texttt{ref.null} creates a null reference of a given type, \texttt{ref.is\_null} checks if a reference is null, \texttt{ref.cast} casts a reference to a different type (and traps if the cast is invalid), \texttt{ref.test} checks if a reference can be cast to a given type, and \texttt{ref.eq} compares two references.
+Reference types are references to heap types such as functions, structs, and arrays. The references are typed, meaning that every reference has a specific type associated with it. \texttt{anyref} is a supertype of all reference types in Wasm, allowing it to store references to any type of object, but it requires runtime type casts when accessing these fields. A cast can be performed using the \texttt{ref.cast} instruction, which casts a reference to a different type and traps if the cast is invalid. The \texttt{ref.test} instruction checks if a reference can be cast to a given type. Reference types can also be nullable, meaning that they can point to either an object of the specified type or null. The \texttt{ref.null} instruction creates a null reference of a given type, and the \texttt{ref.is\_null} instruction checks if a reference is null.
 
-These reference types can be used for boxing numeric types, but are most oftenly used for more complex types named aggregate types. Aggregate types include Structs and Arrays, and are user defined. Structs are collections of named fields, each with their own type, while Arrays are collections of elements of the same type. An example of type definitions for node which we could use for the implementation of the MicroHs runtime system is shown below:
+Custom types can be defined in Wasm using the \texttt{type} keyword. These custom types can be used to define more complex data structures such as structs and arrays. Structs are collections of named fields, each with their own type, while arrays are collections of elements of the same type. For example, we can define a struct type for a binary tree node as follows:
 \begin{minted}{wat}
 (type $Node (struct
   (field $left  (mut anyref))
   (field $right (mut anyref))
 ))
 \end{minted}
-In this definition, we use the \texttt{anyref} type which is a supertype of all reference types in Wasm. This allows us to store references to any type of object in the \texttt{left} and \texttt{right} fields of the \texttt{Node} struct, but comes at the cost of having to perform runtime type casts when accessing these fields. The \texttt{mut} keyword indicates that the fields are mutable, meaning that their values can be changed after the struct is created. Simlarly we can define an array type like this:
-\begin{minted}{wat}
-(type $NodeArray (array (mut (ref null $Node))))
-\end{minted}
-
-\paragraph{Memory}
-Originally Wasm provided only one type of memory, namely linear memory, which is a contiguous, byte-addressable array of memory that can be read and written to from Wasm code. Linear memory is managed manually by the program, meaning that the program is, for example, responsible for not overwriting memory that is still needed, and is thus prone to memory issues caused by human error.
-
-Since the release of WasmGC, Wasm now also supports garbage-collected (GC) memory, it does this by leveraging the host environment's garbage collector reclaim and allocate memory on behalf of the Wasm program. Objects pointed to by references are automatically stored in GC memory.
+In this definition, we use the \texttt{anyref} type for the fields, which allows us to store references to any type of object in the \texttt{left} and \texttt{right} fields of the \texttt{Node} struct. The \texttt{mut} keyword indicates that the fields are mutable, meaning that their values can be changed after the struct is created.

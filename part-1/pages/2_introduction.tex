@@ -1,21 +1,19 @@
 \chapter{Introduction}\label{ch:introduction}
-Today, porting Haskell code to web browsers and cloud platforms is complicated. Current approaches such as transpilation to JavaScript~\cite{ghcjs} suffer from performance issues and lack of semantic similarity (e.g. functional vs imperative, lazy vs eager eveluation, etc.), while solutions such as containerization can not be used in browser environments.
+Today, porting Haskell code to web browsers is complicated. Current approaches such as transpilation to JavaScript~\cite{ghcjs} suffer from performance issues and lack of semantic similarity (e.g. functional vs imperative, lazy vs eager eveluation, etc.), while solutions such as containerization can not be used in browser environments.
 
-A promising alternative is compiling Haskell to WebAssembly (Wasm)~\cite{wasm,ghcwasm,asterius}, a low-level bytecode format designed for efficient execution in portable environments such as web browsers, but also for non-browser engines which can be used for server-side applications. Wasm however has its own challenges, the original version of Wasm (WasmMVP) does not natively support garbage collection (GC), which forces compilers targeting WasmMVP to ship their own memory management systems. This in turn results in large binary sizes, which causes issues on the web where bundle size is the main contributor to loading time.
+A promising alternative is compiling Haskell to WebAssembly (Wasm)~\cite{wasm,ghcwasm,asterius}, a low-level bytecode format designed for efficient execution in portable environments such as web browsers, but also for non-browser engines which can be used for server-side applications. Wasm however has its own challenges, the original version of Wasm (WasmMVP) does not natively support garbage collection (GC), which forces compilers targeting WasmMVP to ship their own memory management systems. 
 
-This changed with the recent release of Wasm 3.0~\cite{wasm3} due to the integration of the WasmGC proposal, which natively supports GC by leveraging the host environment's GC capabilities. This allows compilers targeting Wasm to make use of the host environment's GC instead of shipping their own, which can lead to smaller binary sizes and improved performance.
+This changed with the recent release of Wasm 3.0~\cite{wasm3} due to the integration of the WasmGC proposal, which extends Wasm with user-defined garbage collected (GC) data types. This allows compilers targeting Wasm to make use of the host environment's GC instead of shipping their own, which can lead to smaller binary sizes and improved maintainability. This is due to the fact that runtime systems can be simpler and smaller as they do not need to include a GC implementation.
 
 % TODO: why don't they?
-Despite the potential benefits of using WasmGC, current Haskell-to-Wasm compilers such as GHC's Wasm backend~\cite{ghcwasm} and Asterius~\cite{asterius} do not make use of it, and instead target WasmMVP. 
+Despite the potential benefits of using WasmGC, current Wasm backends of compilers such as GHC's Wasm backend~\cite{ghcwasm} do not make use of it, and instead target WasmMVP. 
 
-\paragraph{Contributions} We aim to explore the effects of using WasmGC as a target for Haskell-to-Wasm compilers, which we will do by extending an existing Haskell compiler MicroHs~\cite{microhs} to target WasmGC. Concretely, we will do the following:
+\paragraph{Contributions} The goal of this project is to investigate the performance tradeoffs of using WasmGC as a target for Haskell compilers. To this end we will extend the Haskell compiler MicroHs~\cite{microhs} with a WasmGC backend. Concretely, we will do the following:
 \begin{enumerate}
     \item Design and implement a custom domain specific language (DSL) for generating WasmGC code, for use in the runtime system and backend of the compiler. This will help us to write more maintainable and readable code compared to writing raw WasmGC.
     \item Design and implement a runtime system for the WasmGC backend using the custom DSL.
     \item Evaluate the produced Wasm binaries in terms of size and runtime performance against other Haskell-to-Wasm compilers and MicroHs's existing C backend.
 \end{enumerate}
-
-We expect that using WasmGC will lead to smaller binary sizes due to a smaller runtime system (without a custom GC) and improved performance due WasmGC specific optimizations in Wasm engines and optimizers.
 
 \paragraph{Previous Work}
 
